@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enough English? - CMU-Q</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo-container">
+                <img src="assets/logo.png" alt="Enough English Logo" class="logo">
+                <h1>Enough English?</h1>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="btnPurpose" class="btn-outline">Purpose of this Website</button>
+                <button id="btnLangToggle" class="btn-outline">العربية</button>
+            </div>
+            <p class="subtitle">Mapping Language & Identity at CMU-Q</p>
+        </header>
+
+        <main class="main-content">
+            <section class="map-section">
+                <div class="map-instructions-top"
+                    style="text-align: center; margin-bottom: 15px; font-style: italic; color: var(--text-secondary);">
+                    <p>Each point you see on this map is an anonymous moment when someone at CMU-Q used a language and
+                        felt ‘too much,’ ‘not enough,’ or ‘just enough.’</p>
+                </div>
+                <div class="floor-controls">
+                    <button id="btnFloorUp" class="floor-btn" aria-label="Go Up">▲</button>
+                    <div class="floor-indicator">
+                        <span class="floor-label">FLOOR</span>
+                        <span id="floorName" class="floor-name">Ground</span>
+                    </div>
+                    <button id="btnFloorDown" class="floor-btn" aria-label="Go Down">▼</button>
+                </div>
+                <div class="map-container" id="mapContainer">
+                    <img src="assets/cmuq_map_ground.png" alt="CMU-Q Map" id="cmuMap" class="cmu-map">
+                    <canvas id="heatmapCanvas"></canvas>
+                    <div id="clickMarker" class="click-marker hidden"></div>
+                </div>
+                <div class="map-instructions">
+                    <p>📍 Click on the map to select your location</p>
+                </div>
+            </section>
+
+            <aside class="sidebar">
+                <div class="card input-card">
+                    <h2>Share Your Experience</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">No names or emails
+                        are collected. All responses are anonymous.</p>
+                    <form id="entryForm">
+                        <div class="form-group">
+                            <label for="locationDisplay">Location</label>
+                            <input type="text" id="locationDisplay" readonly placeholder="Click on map to set location"
+                                required>
+                            <input type="hidden" id="posX">
+                            <input type="hidden" id="posY">
+                            <input type="hidden" id="floor" value="Ground">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="role">Your Role</label>
+                            <select id="role" required>
+                                <option value="" disabled selected>Select your role...</option>
+                                <option value="Student">Student</option>
+                                <option value="Teaching Assistant / Tutor">Teaching Assistant / Tutor</option>
+                                <option value="Faculty">Faculty</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Visitor / Other">Visitor / Other</option>
+                                <option value="Prefer not to say">Prefer not to say</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="language">Language Used</label>
+                            <select id="language" required>
+                                <option value="" disabled selected>Select a language...</option>
+                                <option value="English">English</option>
+                                <option value="Arabic">Arabic</option>
+                                <option value="Mix">Mix (Arabic/English)</option>
+                                <option value="Russian">Russian</option>
+                                <option value="Mandarin">Mandarin</option>
+                                <option value="Hindi">Hindi</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>How did it feel?</label <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="feeling" value="Too Much" required>
+                                <span><strong>Pressured / Overwhelmed</strong><br><small>(Too Much)</small></span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="feeling" value="Not Enough" required>
+                                <span><strong>Inadequate / Excluded</strong><br><small>(Not Enough)</small></span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="feeling" value="Just Enough" required>
+                                <span><strong>Authentic / Comfortable</strong><br><small>(Just
+                                        Enough)</small></span>
+                            </label>
+                        </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reflection">Reflection (Optional)</label>
+                    <textarea id="reflection" maxlength="200" placeholder="Briefly describe the moment..."></textarea>
+                    <div class="char-count"><span id="charCount">0</span>/200</div>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Entry</button>
+                </form>
+    </div>
+
+    <div class="card stats-card">
+        <h2>Live Data</h2>
+        <div class="chart-container">
+            <canvas id="langChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="feelingChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card wordcloud-card">
+        <h2>AI Thematic Analysis</h2>
+        <div id="wordCloud" class="word-cloud">
+            <p class="placeholder-text">Analyzing reflections...</p>
+        </div>
+    </div>
+
+    <div class="card recent-entries-card">
+        <h2>Recent Entries</h2>
+        <ul id="entriesList" class="entries-list">
+            <!-- Entries will be populated here -->
+        </ul>
+    </div>
+    </aside>
+    </main>
+    </div>
+
+    <!-- Purpose Modal -->
+    <div id="purposeModal" class="modal hidden">
+        <div class="modal-content">
+            <span id="closeModal" class="close-btn">&times;</span>
+            <h2>Purpose of this Website</h2>
+
+            <div class="modal-body">
+                <h3>Why This Exists</h3>
+                <p>This project visualizes how CMU-Q students, faculty, and staff navigate English, Arabic, and other
+                    languages across campus. It responds to a persistent problem: multilingual students are often made
+                    to feel that their English is never quite "good enough" for academic spaces, while their Arabic is
+                    judged as not "authentic" enough for society.</p>
+
+                <h3>Disrupting Deficit Narratives</h3>
+                <p>Drawing on Blommaert & Varis's concept of <strong>"enoughness"</strong>, this project reveals how
+                    multilingual individuals must constantly perform adequacy within shifting <strong>orders of
+                        indexicality</strong>—the social hierarchies that determine whose language "counts" in which
+                    spaces. By mapping these feelings of "not enoughness," we turn private anxieties into public data,
+                    arguing that everyday multilingual practices are not evidence of lack, but resources to be valued.
+                </p>
+
+                <h3>Challenging Language Hierarchies</h3>
+                <p>Hopkyns & Elyas document the <strong>English-Arabic ideological hierarchy</strong> in Gulf higher
+                    education, where English dominates academic assessment while Arabic is relegated to symbolic
+                    heritage. This visualization challenges that hierarchy by making visible where and how Arabic (and
+                    other languages) function in learning, mentoring, and peer support—not just in "cultural" corners.
+                </p>
+
+                <h3>How Data Creates Impact</h3>
+                <p>By making these invisible tensions visible, we aim to:</p>
+                <ul>
+                    <li>Show that you are not alone in these feelings.</li>
+                    <li>Challenge the "English-only" hierarchy in academic spaces.</li>
+                    <li>Open space for more flexible, locally grounded standards of language.</li>
+                </ul>
+
+                <div class="modal-footer">
+                    <p><em>Based on research by Blommaert & Varis (2015) and Hopkyns & Elyas (2022).</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
